@@ -12,13 +12,9 @@ namespace UniShareAPI.Models.Relations
         public int Id { get; set; }
         public string Text { get; set; }
         public DateTime Date { get; set; }
-
-        public string Author { get; set; }
-        [ForeignKey(nameof(Author))]
-        public IdentityUser UserAuthor { get; set; }
-
-        public string Profile { get; set; }
-        [ForeignKey(nameof(Profile))]
-        public IdentityUser UserProfile { get; set; }
+        public string AuthorId { get; set; }
+        public virtual User Author { get; set; }
+        public string ProfileId { get; set; }
+        public virtual User Profile { get; set; }
     }
 }

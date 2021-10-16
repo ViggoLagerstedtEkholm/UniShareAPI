@@ -9,7 +9,6 @@ namespace UniShareAPI.Models.Relations
 {
     public class Review
     {
-        public int Id { get; set; }
         public string Text { get; set; }
         public int Fulfilling { get; set; }
         public int Environment { get; set; }
@@ -17,10 +16,12 @@ namespace UniShareAPI.Models.Relations
         public int Grading { get; set; }
         public int Litterature { get; set; }
         public int Overall { get; set; }
+        public int Helpful { get; set; }
         public DateTime UpdatedDate { get; set; }
         public DateTime AddedDate { get; set; }
         public string UserId { get; set; }
-        [ForeignKey(nameof(UserId))]
-        public IdentityUser User { get; set; }
+        public int CourseId { get; set; }
+        public User User { get; set; }
+        public Course Course { get; set; }
     }
 }

@@ -10,6 +10,7 @@ namespace UniShareAPI.Models.Relations
 {
     public class Post
     {
+        /*
         public int Id { get; set; }
         public int ForumId { get; set; }
         public string Text { get; set; }
@@ -17,5 +18,6 @@ namespace UniShareAPI.Models.Relations
         [ForeignKey(nameof(ForumId))]
         public Forum Forum { get; set; }
         public DateTime Date { get; set; }
+        */
     }
 }

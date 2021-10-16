@@ -12,10 +12,10 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using UniShareAPI.Configuration;
-using UniShareAPI.Models;
 using UniShareAPI.Models.DTO;
 using UniShareAPI.Models.DTO.Requests;
 using UniShareAPI.Models.DTO.Response;
+using UniShareAPI.Models.Relations;
 
 namespace UniShareAPI.Controllers
 {
@@ -23,11 +23,11 @@ namespace UniShareAPI.Controllers
     [ApiController]
     public class AuthenticationController : ControllerBase
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<User> _userManager;
         private readonly JwtConfig _jwtConfig;
         private readonly TokenValidationParameters _tokenValidationParams;
         private readonly AppDbContext _appDbContext;
-        public AuthenticationController(UserManager<IdentityUser> userManager,
+        public AuthenticationController(UserManager<User> userManager,
             IOptionsMonitor<JwtConfig> optionsMonitor,
             TokenValidationParameters tokenValidationParameters,
             AppDbContext appDbContext)
@@ -57,7 +57,15 @@ namespace UniShareAPI.Controllers
                     });
                 }
 
-                var newUser = new IdentityUser() { Email = request.Email, UserName = request.Username };
+                var newUser = new User() {
+                    Email = request.Email,
+                    UserName = request.Username,
+                    Firstname = request.Firstname,
+                    Lastname = request.Lastname,
+                    Age = request.Age,
+                    Joined = DateTime.Now,
+                };
+
                 var isCreated = await _userManager.CreateAsync(newUser, request.Password);
 
                 if (!isCreated.Succeeded)
@@ -116,6 +124,10 @@ namespace UniShareAPI.Controllers
 
                 var res = await GenerateAuthenticationResultForUserAsync(existingUser);
 
+                //Add last seen date on login.
+                existingUser.LastSeenDate = DateTime.Now;
+                await _userManager.UpdateAsync(existingUser);
+
                 return Ok(res);
             }
 
@@ -128,7 +140,7 @@ namespace UniShareAPI.Controllers
             });
         }
 
-        private async Task<AuthenticationResult> GenerateAuthenticationResultForUserAsync(IdentityUser user)
+        private async Task<AuthenticationResult> GenerateAuthenticationResultForUserAsync(User user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_jwtConfig.Secret);
@@ -138,6 +150,7 @@ namespace UniShareAPI.Controllers
                 Subject = new ClaimsIdentity(new[]
                 {
                     new Claim("Id", user.Id),
+                    new Claim("Username", user.UserName),
                     new Claim(JwtRegisteredClaimNames.Email, user.Email),
                     new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())

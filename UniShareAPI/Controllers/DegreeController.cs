@@ -1,79 +1,186 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using UniShareAPI.Models;
+using UniShareAPI.Models.DTO.Requests;
+using UniShareAPI.Models.DTO.Requests.Course;
+using UniShareAPI.Models.DTO.Requests.Degree;
+using UniShareAPI.Models.DTO.Response.Degrees;
+using UniShareAPI.Models.Extensions;
+using UniShareAPI.Models.Relations;
 
 namespace UniShareAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class DegreeController
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    public class DegreeController : ControllerBase
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<User> _userManager;
         private readonly AppDbContext _appDbContext;
-        public DegreeController(UserManager<IdentityUser> userManager,
+        public DegreeController(UserManager<User> userManager,
             AppDbContext appDbContext)
         {
             _userManager = userManager;
             _appDbContext = appDbContext;
         }
 
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpPost]
+        [Route("upload")]
+        public async Task<IActionResult> UploadDegree([FromForm] DegreeUploadRequest degreeUpload)
         {
-            //Get degree.
-            return "Get degree: " + id;
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
+
+            var degree = new Degree
+            {
+                Name = degreeUpload.Name,
+                City = degreeUpload.City,
+                StartDate = degreeUpload.StartDate,
+                EndDate = degreeUpload.EndDate,
+                University = degreeUpload.University,
+                Field = degreeUpload.Field,
+                Country = degreeUpload.Country,
+                User = user
+            };
+
+            await _appDbContext.Degrees.AddAsync(degree);
+            await _appDbContext.SaveChangesAsync();
+
+            return Ok();
         }
 
-        [HttpGet]
-        [Route("active/degree")]
-        public string GetActiveDegree(int id)
+        [HttpPost]
+        [Route("toggle/{id}")]
+        public async Task<IActionResult> ToggleActiveDegree(int id)
         {
-            //Get active degree.
-            return "Get active degree: " + id;
-        }
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
+            var course = await _appDbContext.Courses.FirstOrDefaultAsync(x => x.Id.Equals(id));
 
-        [HttpGet]
-        [Route("active/degree/settings")]
-        public string GetDegreeSettings(int id)
-        {
-            //Get degree settings.
-            return "Get degree settings: " + id;
+            string userId = user.Id;
+            int courseId = course.Id;
+
+            int? activeDegree = user.ActiveDegreeId;
+            if(activeDegree == null)
+            {
+                return BadRequest("You need to register an active degree!");
+            }
+
+            var courseInDegree = await _appDbContext.DegreeCourses.FirstOrDefaultAsync(x => x.DegreeId.Equals(activeDegree) && x.CourseId == id);
+            
+            DegreeCourse degreeCourse = new ()
+            {
+                CourseId = id,
+                DegreeId = (int) activeDegree,
+            };
+
+            if (courseInDegree != null){
+                //Remove from degree.
+                _appDbContext.DegreeCourses.Remove(courseInDegree);
+                await _appDbContext.SaveChangesAsync();
+                return Ok(false);
+            }
+            else
+            {
+                //Add to degree.
+                await _appDbContext.DegreeCourses.AddAsync(degreeCourse);
+                await _appDbContext.SaveChangesAsync();
+                return Ok(true);
+            }
         }
 
         [HttpPost]
         [Route("update")]
-        public string Update(int id)
+        public async Task<IActionResult> UpdateDegree([FromForm] DegreeUpdateRequest degreeUpdate)
         {
-            //Update degree.
-            return "Update degree: " + id;
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
+
+            var degree = await _appDbContext.Degrees.FirstOrDefaultAsync(x => x.Id == degreeUpdate.Id);
+
+            degree.Name = degreeUpdate.Name;
+            degree.City = degreeUpdate.City;
+            degree.StartDate = degreeUpdate.StartDate;
+            degree.EndDate = degreeUpdate.EndDate;
+            degree.University = degreeUpdate.University;
+            degree.Country = degreeUpdate.Country;
+            degree.Field = degreeUpdate.Field;
+
+            _appDbContext.Degrees.Update(degree);
+            await _appDbContext.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        [HttpGet]
+        [Route("user/{username}")]
+        [AllowAnonymous]
+        public IActionResult GetDegrees(string username)
+        {
+            var degrees = _appDbContext.Degrees.Where(x => x.User.UserName.Equals(username));
+
+            if (degrees == null)
+            {
+                return NotFound();
+            }
+
+            List<DegreeWithCourses> degreeWithCourses = new List<DegreeWithCourses>();
+
+            foreach(Degree aDegree in degrees.ToList())
+            {
+                int degreeId = aDegree.Id;
+
+                var result = (
+                from courses in _appDbContext.Courses
+                join degreeCourses in _appDbContext.DegreeCourses
+                on courses.Id equals degreeCourses.CourseId
+                where degreeCourses.DegreeId == degreeId
+                select courses).ToList();
+
+                DegreeWithCourses coursesDegree = new()
+                {
+                    Courses = result,
+                    Degree = aDegree
+                };
+
+                degreeWithCourses.Add(coursesDegree);
+            }
+
+
+            return Ok(degreeWithCourses);
+        }
+
+        [HttpGet]
+        [Route("{id}")]
+        public async Task<IActionResult> GetDegree(int id)
+        {
+            var degree = await _appDbContext.Degrees.FirstOrDefaultAsync(x => x.Id.Equals(id));
+            return Ok(degree);
         }
 
         [HttpPost]
-        [Route("upload")]
-        public string Upload(int id)
+        [Route("delete/{id}")]
+        public async Task<IActionResult> DeleteDegree(int id)
         {
-            //Upload degree.
-            return "Update degree: " + id;
-        }
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
 
-        [HttpPost]
-        [Route("upload")]
-        public string Delete(int id)
-        {
-            //Delete degree.
-            return "Delete degree: " + id;
-        }
+            var degreeToDelete = await _appDbContext.Degrees.FirstOrDefaultAsync(x => x.Id == id);
 
-        [HttpPost]
-        [Route("toggle")]
-        public string ToggleCourseToDegree(int id)
-        {
-            //Toggle course to degree.
-            return "Toggle course to degree: " + id;
+            if (degreeToDelete.User.Id == user.Id)
+            {
+                _appDbContext.Remove(degreeToDelete);
+                _appDbContext.SaveChanges();
+                return Ok();
+            }
+            else
+            {
+                return BadRequest("You do not own this degree!");
+            }
         }
     }
 }

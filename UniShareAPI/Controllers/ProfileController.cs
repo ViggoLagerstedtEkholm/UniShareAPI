@@ -1,12 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Threading.Tasks;
-using UniShareAPI.Models;
+using UniShareAPI.Models.DTO.Requests;
+using UniShareAPI.Models.Extensions;
+using UniShareAPI.Models.Relations;
 using UniShareAPI.Models.Viewmodels;
 
 namespace UniShareAPI.Controllers
@@ -15,61 +18,95 @@ namespace UniShareAPI.Controllers
     [ApiController]
     public class ProfileController : ControllerBase
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<User> _userManager;
         private readonly AppDbContext _appDbContext;
-        public ProfileController(UserManager<IdentityUser> userManager,
-            AppDbContext appDbContext)
+        public static IWebHostEnvironment _webHostEnvironment;
+        public ProfileController(UserManager<User> userManager,
+            AppDbContext appDbContext,
+            IWebHostEnvironment webHostEnvironment)
         {
             _userManager = userManager;
             _appDbContext = appDbContext;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpGet]
-        [Route("{id}")]
-        public string GetProfile(int id)
+        [Route("{username}")]
+        public async Task<IActionResult> GetUserProfileAsync(string username)
         {
-            return "Get profile: " + id;
-        }
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.UserName == username);
 
-        [HttpPost]
-        [Route("user/append/{id}")]
-        public IActionResult AppendVisit(string id)
-        {
-            return Ok("Append user by ID: " + id);
-        }
-
-
-        [HttpPost]
-        [Route("user/upload/image/{id}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public IActionResult Upload(string id)
-        {
-            return Ok("Uploading image user ID: " + id);
-        }
-
-        [HttpGet("comments")]
-        public IEnumerable<CommentViewmodel> GetComments([FromBody] int id)
-        {
-            List<CommentViewmodel> comments = new()
+            if (user == null)
             {
-                new CommentViewmodel()
-                {
-                    Text = "Comment!",
-                    Date = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                    Author = "AUTHOR ID",
-                    Profile = "PROFILE ID"
-                }
+                return NotFound();
+            }
+
+            var userModel = new UserProfileViewModel()
+            {
+                Email = user.Email,
+                Firstname = user.Firstname,
+                Lastname = user.Lastname,
+                Image = null,
+                Username = user.UserName,
+                Visits = user.Visits,
+                Id = user.Id,
+                LastOnline = user.LastSeenDate,
+                Joined = user.Joined,
+                LinkedIn = user.LinkedIn,
+                GitHub = user.GitHub,
             };
 
-            return comments;
+            return Ok(userModel);
         }
 
         [HttpPost]
-        [Route("remove/course/degree}")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public IActionResult RemoveCourseFromDegree(string id)
+        [Route("append/{username}")]
+        public async Task<IActionResult> AppendVisitAsync(string username)
         {
-            return Ok("Remove course from degree: " + id);
+            var appendUser = await _appDbContext.Users.FirstOrDefaultAsync(x => x.UserName == username);
+            if(appendUser != null)
+            {
+                appendUser.Visits++;
+                await _userManager.UpdateAsync(appendUser);
+                return Ok();
+            }
+            return BadRequest();
+        }
+
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Route("image/upload")]
+        public async Task<IActionResult> UploadImageAsync([FromForm] FileUpload fileUpload)
+        {
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
+
+            try
+            {
+                using var stream = new MemoryStream();
+                fileUpload.file.CopyTo(stream);
+                var fileBytes = stream.ToArray();
+                user.Image = fileBytes;
+                await _userManager.UpdateAsync(user);
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("image/get/{username}")]
+        public async Task<IActionResult> GetImageAsync(string username)
+        {
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.UserName == username);
+
+            if (user.Image != null)
+            {
+                user.Image = user.Image;
+            }
+            return Ok(user.Image);
         }
     }
 }

@@ -9,6 +9,7 @@ namespace UniShareAPI.Models.Relations
 {
     public class Request
     {
+        /*
         public string Id { get; set; }
         public string Name { get; set; }
         public double Credits { get; set; }
@@ -21,5 +22,6 @@ namespace UniShareAPI.Models.Relations
         public string Description { get; set; }
         public DateTime Date { get; set; }
         public string Code { get; set; }
+        */
     }
 }

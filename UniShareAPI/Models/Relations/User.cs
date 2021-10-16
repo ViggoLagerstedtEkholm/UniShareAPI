@@ -6,46 +6,24 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using UniShareAPI.Models.DTO;
 
 namespace UniShareAPI.Models.Relations
 {
     public class User : IdentityUser
     {
+
         //First name
-        [PersonalData]
-        [Column(TypeName = "nvarchar(100)")]
-        [Required(ErrorMessage = "Please enter a firstname")]
-        [RegularExpression("[a-zA-ZäåöüÄÅÖÜß]+", ErrorMessage = "Firstname can only contain letters")]
         public string Firstname { get; set; }
 
         //Last name
-        [PersonalData]
-        [Column(TypeName = "nvarchar(100)")]
-        [RegularExpression("[a-zA-ZäåöüÄÅÖÜß]+", ErrorMessage = "Lastname can only contain letters")]
-        [Required(ErrorMessage = "Please enter a lastname")]
         public string Lastname { get; set; }
 
         //Description
-        [PersonalData]
-        [Column(TypeName = "nvarchar(500)")]
-        [StringLength(500, MinimumLength = 20, ErrorMessage = "Message must be between 20 to 500 letters")]
         public string Description { get; set; }
-
-        //City
-        [PersonalData]
-        [Column(TypeName = "nvarchar(100)")]
-        [Required(ErrorMessage = "Please enter the city you´r from")]
-        [RegularExpression("(.*[a-zA-ZäåöüÄÅÖÜß]){3}", ErrorMessage = "Your city must atleast have three letters")]
-        [Display(Name = "City")]
-        [StringLength(50)]
-        public string City { get; set; }
-
+        public string GitHub { get; set; }
+        public string LinkedIn { get; set; }
         //Age
-        [PersonalData]
-        [Column(TypeName = "int")]
-        [Required(ErrorMessage = "Please enter your age")]
-        [Display(Name = "age")]
-        [Range(13, 100, ErrorMessage = "You must be at least 13 years old and at the most 100.")]
         public int Age { get; set; }
 
         //Visits
@@ -54,16 +32,20 @@ namespace UniShareAPI.Models.Relations
         //Joined and last seen date and time
         public DateTime LastSeenDate { get; set; }
         public DateTime Joined { get; set; }
-
         //Image
         public byte[] Image { get; set; }
 
-        //Active degree foreign key
-        public string ActiveDegreeId { get; set; }
-        [ForeignKey(nameof(ActiveDegreeId))]
-        public Degree Degree { get; set; }
+        public int? ActiveDegreeId { get; set; }
+        public virtual Degree ActiveDegree { get; set; }
+        public virtual ICollection<UserCourse> Ratings { get; set; }
+        public virtual ICollection<RefreshToken> RefreshTokens { get; set; }
+        public virtual ICollection<Project> Projects { get; set; }
+        public virtual ICollection<Degree> Degrees { get; set; }
 
-        //Ratings
-        public virtual ICollection<Rating> Ratings { get; set; }
+        public virtual ICollection<Review> Reviews { get; set; }
+
+        //Comments
+        public virtual ICollection<Comment> Writer { get; set; }
+        public virtual ICollection<Comment> Receiver { get; set; }
     }
 }

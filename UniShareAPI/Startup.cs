@@ -16,7 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UniShareAPI.Configuration;
-using UniShareAPI.Models;
+using UniShareAPI.Models.Relations;
 
 namespace UniShareAPI
 {
@@ -73,7 +73,7 @@ namespace UniShareAPI
                 jwt.TokenValidationParameters = tokenValidationParams;
             });
 
-            services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddEntityFrameworkStores<AppDbContext>();
 
 
@@ -112,9 +112,9 @@ namespace UniShareAPI
 
             app.UseRouting();
 
+            app.UseAuthorization();
             app.UseAuthentication();
 
-            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {

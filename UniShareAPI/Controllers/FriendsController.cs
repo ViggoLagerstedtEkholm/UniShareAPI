@@ -1,10 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using UniShareAPI.Models;
+using UniShareAPI.Models.Relations;
 
 namespace UniShareAPI.Controllers
 {
@@ -12,9 +8,9 @@ namespace UniShareAPI.Controllers
     [ApiController]
     public class FriendsController
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<User> _userManager;
         private readonly AppDbContext _appDbContext;
-        public FriendsController(UserManager<IdentityUser> userManager,
+        public FriendsController(UserManager<User> userManager,
             AppDbContext appDbContext)
         {
             _userManager = userManager;
