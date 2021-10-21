@@ -14,9 +14,11 @@ using UniShareAPI.Models.DTO.Requests.Search.Course;
 using UniShareAPI.Models.DTO.Requests.Search.People;
 using UniShareAPI.Models.DTO.Requests.Search.Ratings;
 using UniShareAPI.Models.DTO.Requests.Search.Review;
+using UniShareAPI.Models.DTO.Requests.Search.UserReview;
 using UniShareAPI.Models.DTO.Response.Search.Comments;
 using UniShareAPI.Models.DTO.Response.Search.Courses;
 using UniShareAPI.Models.DTO.Response.Search.People;
+using UniShareAPI.Models.DTO.Response.Search.ProfileReviews;
 using UniShareAPI.Models.DTO.Response.Search.Ratings;
 using UniShareAPI.Models.DTO.Response.Search.Reviews;
 using UniShareAPI.Models.Extensions;
@@ -36,14 +38,110 @@ namespace UniShareAPI.Controllers
         }
 
         [HttpPost]
-        [Route("ratings")]
-        public async Task<IActionResult> SearchRatingsAsync([FromBody] RatingsFilter filter)
+        [Route("user/reviews")]
+        public async Task<IActionResult> SearchUserReviewsAsync([FromBody] UserReviewFilter filter)
         {
-            RatingsFilterResultResponse results = await SearchRatingsWithTextAsync(filter);
+            UserReviewFilterResultResponse results = await SearchUserReviewsWithTextAsync(filter);
             return Ok(results);
         }
 
-        private async Task<RatingsFilterResultResponse> SearchRatingsWithTextAsync(RatingsFilter filter)
+        private async Task<UserReviewFilterResultResponse> SearchUserReviewsWithTextAsync(UserReviewFilter filter)
+        {
+            string search = filter.Search;
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.UserName.Equals(filter.Username));
+            string profileId = user.Id;
+
+            int count = 0;
+            IQueryable<ProfileReviewResponse> reviews;
+
+            if (search == null)
+            {
+                count = _appDbContext.Courses
+               .Join(_appDbContext.Reviews, u => u.Id, uir => uir.CourseId, (u, uir) => new { u, uir })
+               .Where(m => m.uir.UserId.Equals(profileId)).Count();
+
+                reviews = _appDbContext.Courses
+                .Join(_appDbContext.Reviews, u => u.Id, uir => uir.CourseId, (u, uir) => new { u, uir })
+                .Where(m => m.uir.UserId.Equals(profileId))
+                .Select(p => new ProfileReviewResponse
+                {
+                    Text = p.uir.Text,
+                    Added = p.uir.AddedDate,
+                    Updated = p.uir.UpdatedDate,
+                    CourseId = p.u.Id,
+                    Difficulty = p.uir.Difficulty,
+                    Environment = p.uir.Environment,
+                    Fulfilling = p.uir.Fulfilling,
+                    Grading = p.uir.Grading,
+                    Litterature = p.uir.Litterature,
+                    Name = p.u.Name,
+                    Overall = p.uir.Overall,
+                    University = p.u.University
+                });
+            }
+            else
+            {
+                count = _appDbContext.Courses
+                   .Join(_appDbContext.Reviews, u => u.Id, uir => uir.CourseId, (u, uir) => new { u, uir })
+                   .Where(m => m.uir.UserId.Equals(profileId) &&
+                            (m.uir.Text.Contains(search) ||
+                            m.uir.AddedDate.ToString().Contains(search) ||
+                            m.u.Credits.Equals(search) ||
+                            m.u.Code.Contains(search) ||
+                            m.u.Name.Contains(search) ||
+                            m.u.University.Contains(search)
+                            )).Count();
+
+                reviews = _appDbContext.Courses
+               .Join(_appDbContext.Reviews, u => u.Id, uir => uir.CourseId, (u, uir) => new { u, uir })
+                .Where(m => m.uir.UserId.Equals(profileId) &&
+                            (m.uir.Text.Contains(search) ||
+                            m.uir.AddedDate.ToString().Contains(search) ||
+                            m.u.Credits.Equals(search) ||
+                            m.u.Code.Contains(search) ||
+                            m.u.Name.Contains(search) ||
+                            m.u.University.Contains(search)
+                            ))
+                .Select(p => new ProfileReviewResponse
+                {
+                    Text = p.uir.Text,
+                    Added = p.uir.AddedDate,
+                    Updated = p.uir.UpdatedDate,
+                    CourseId = p.u.Id,
+                    Difficulty = p.uir.Difficulty,
+                    Environment = p.uir.Environment,
+                    Fulfilling = p.uir.Fulfilling,
+                    Grading = p.uir.Grading,
+                    Litterature = p.uir.Litterature,
+                    Name = p.u.Name,
+                    Overall = p.uir.Overall,
+                    University = p.u.University,
+                    Code = p.u.Code
+                });
+            }
+            
+            Pagination pagination = CalculateOffsets(count, filter.Page, filter.ResultsPerPage);
+            List<ProfileReviewResponse> filteredResults = ApplyOrderingUserReviewFilters(reviews, filter).Skip(pagination.PageFirstResultIndex).Take(pagination.ResultsPerPage).ToList();
+
+            var peopleResult = new UserReviewFilterResultResponse
+            {
+                Pagination = pagination,
+                ProfileReviews = filteredResults,
+                TotalMatches = count
+            };
+            
+            return peopleResult;
+        }
+
+        [HttpPost]
+        [Route("user/ratings")]
+        public async Task<IActionResult> SearchRatingsAsync([FromBody] RatingsFilter filter)
+        {
+            RatingsFilterResultResponse results = await SearchUserRatingsWithTextAsync(filter);
+            return Ok(results);
+        }
+
+        private async Task<RatingsFilterResultResponse> SearchUserRatingsWithTextAsync(RatingsFilter filter)
         {
             string search = filter.Search;
             var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.UserName.Equals(filter.ProfileId));
@@ -435,6 +533,15 @@ namespace UniShareAPI.Controllers
                 "Ascending" => users.OrderBy(filter.Option, true).ToList(),
                 "Descending" => users.OrderBy(filter.Option, false).ToList(),
                 _ => new List<RatingsResponse>(),
+            };
+        }
+        private static List<ProfileReviewResponse> ApplyOrderingUserReviewFilters(IQueryable<ProfileReviewResponse> users, UserReviewFilter filter)
+        {
+            return filter.Order switch
+            {
+                "Ascending" => users.OrderBy(filter.Option, true).ToList(),
+                "Descending" => users.OrderBy(filter.Option, false).ToList(),
+                _ => new List<ProfileReviewResponse>(),
             };
         }
         private static List<ReviewResponse> ApplyOrderingReviewFilters(IQueryable<ReviewResponse> users, ReviewFilter filter)

@@ -47,5 +47,9 @@ namespace UniShareAPI.Models.Relations
         //Comments
         public virtual ICollection<Comment> Writer { get; set; }
         public virtual ICollection<Comment> Receiver { get; set; }
+
+        //Relation
+        public virtual ICollection<Relation> From { get; set; }
+        public virtual ICollection<Relation> To { get; set; }
     }
 }

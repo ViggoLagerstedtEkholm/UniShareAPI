@@ -21,6 +21,7 @@ namespace UniShareAPI.Models.Relations
         public DbSet<UserCourse> UserCourses { get; set; }
         public DbSet<DegreeCourse> DegreeCourses { get; set; }
         public DbSet<Comment> Comments { get; set; }
+        public DbSet<Relation> Relations { get; set; }
         public DbSet<Review> Reviews { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options): base(options)
@@ -74,6 +75,21 @@ namespace UniShareAPI.Models.Relations
                 .HasOne(e => e.Profile)
                 .WithMany(e => e.Receiver)
                 .HasForeignKey(e => e.ProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Relation>()
+                .HasKey(pc => new { pc.FromId, pc.ToId });
+
+            builder.Entity<Relation>()
+                .HasOne(e => e.From)
+                .WithMany(e => e.To)
+                .HasForeignKey(e => e.FromId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Relation>()
+                .HasOne(e => e.To)
+                .WithMany(e => e.From)
+                .HasForeignKey(e => e.ToId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             base.OnModelCreating(builder);
