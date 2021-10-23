@@ -11,5 +11,6 @@ namespace UniShareAPI.Models.DTO.Requests.Search.People
     {
         [StringRange(AllowableValues = new[] { "Visits", "Firstname", "Lastname", "Username", "LastSeenDate", "Joined" }, ErrorMessage = "Not a valid option.")]
         public string Option { get; set; }
+        public string CurrentUserId {  get; set; }
     }
 }

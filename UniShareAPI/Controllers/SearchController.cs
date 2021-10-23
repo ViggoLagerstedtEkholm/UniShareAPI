@@ -515,6 +515,21 @@ namespace UniShareAPI.Controllers
             Pagination pagination = CalculateOffsets(count, filter.Page, filter.ResultsPerPage);
             List<UserResponse> filteredResults = ApplyOrderingUsersFilters(users, filter).Skip(pagination.PageFirstResultIndex).Take(pagination.ResultsPerPage).ToList();
 
+            foreach(UserResponse userResponse in filteredResults)
+            {
+                if(filter.CurrentUserId != null)
+                {
+                    var isSent = _appDbContext.Relations.Where(x => x.FromId.Equals(filter.CurrentUserId) && x.ToId.Equals(userResponse.Id) && x.Status.Equals("P")).Any();
+                    var isReceived = _appDbContext.Relations.Where(x => x.FromId.Equals(userResponse.Id) && x.ToId.Equals(filter.CurrentUserId) && x.Status.Equals("P")).Any();
+                    var isFriend = _appDbContext.Relations.Where(x => x.FromId.Equals(filter.CurrentUserId) && x.ToId.Equals(userResponse.Id) && x.Status.Equals("F") ||
+                                                                    x.FromId.Equals(userResponse.Id) && x.ToId.Equals(filter.CurrentUserId) && x.Status.Equals("F")).Any();
+
+                    userResponse.IsFriend = isFriend;
+                    userResponse.IsReceived = isReceived;
+                    userResponse.IsSent = isSent;
+                }
+            }
+
             var peopleResult = new PeopleFilterResultResponse
             {
                 Pagination = pagination,

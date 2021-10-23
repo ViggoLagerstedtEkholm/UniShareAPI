@@ -16,5 +16,8 @@ namespace UniShareAPI.Models.DTO.Requests.Search.People
         public DateTime Joined { get; set; }
         public DateTime LastSeenDate { get; set; }
         public byte[] Image { get; set; }
+        public bool IsFriend { get; set; }
+        public bool IsSent { get; set; }
+        public bool IsReceived { get; set; }
     }
 }
