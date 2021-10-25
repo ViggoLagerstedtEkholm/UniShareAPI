@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -27,11 +28,17 @@ namespace UniShareAPI.Controllers
         private readonly JwtConfig _jwtConfig;
         private readonly TokenValidationParameters _tokenValidationParams;
         private readonly AppDbContext _appDbContext;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly ILogger<AuthenticationController> _logger;
         public AuthenticationController(UserManager<User> userManager,
             IOptionsMonitor<JwtConfig> optionsMonitor,
             TokenValidationParameters tokenValidationParameters,
-            AppDbContext appDbContext)
+            AppDbContext appDbContext,
+            ILogger<AuthenticationController> logger,
+            RoleManager<IdentityRole> roleManager)
         {
+            _logger = logger;
+            _roleManager = roleManager;
             _userManager = userManager;
             _jwtConfig = optionsMonitor.CurrentValue;
             _tokenValidationParams = tokenValidationParameters;
@@ -67,6 +74,11 @@ namespace UniShareAPI.Controllers
                 };
 
                 var isCreated = await _userManager.CreateAsync(newUser, request.Password);
+
+                if (isCreated.Succeeded)
+                {
+                    await _userManager.AddToRoleAsync(newUser, "Standard");
+                }
 
                 if (!isCreated.Succeeded)
                 {
@@ -145,17 +157,12 @@ namespace UniShareAPI.Controllers
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_jwtConfig.Secret);
 
+            var claims = await GetAllValidClaims(user);
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim("Id", user.Id),
-                    new Claim("Username", user.UserName),
-                    new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-                }),
-                Expires = DateTime.UtcNow.AddSeconds(30), // 5-10 
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddMinutes(15),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
@@ -182,6 +189,45 @@ namespace UniShareAPI.Controllers
                 RefreshToken = refreshToken.Token,
                 Success = true
             };
+        }
+
+        private async Task<List<Claim>> GetAllValidClaims(User user)
+        {
+            var options = new IdentityOptions();
+
+            var claims = new List<Claim>
+            {
+                    new Claim("Id", user.Id),
+                    new Claim("Username", user.UserName),
+                    new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                    new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            // Getting the claims that we have assigned to the user
+            var userClaims = await _userManager.GetClaimsAsync(user);
+            claims.AddRange(userClaims);
+
+            // Get the user role and add it to the claims
+            var userRoles = await _userManager.GetRolesAsync(user);
+
+            foreach (var userRole in userRoles)
+            {
+                var role = await _roleManager.FindByNameAsync(userRole);
+
+                if (role != null)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, userRole));
+
+                    var roleClaims = await _roleManager.GetClaimsAsync(role);
+                    foreach (var roleClaim in roleClaims)
+                    {
+                        claims.Add(roleClaim);
+                    }
+                }
+            }
+
+            return claims;
         }
 
         private string RandomString(int length)

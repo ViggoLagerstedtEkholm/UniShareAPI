@@ -51,7 +51,7 @@ namespace UniShareAPI.Controllers
 
         [HttpPost]
         [Route("delete")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Standard, Admin")]
         public async Task<IActionResult> DeleteUser()
         {
             var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());

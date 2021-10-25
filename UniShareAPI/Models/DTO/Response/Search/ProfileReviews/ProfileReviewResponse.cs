@@ -18,7 +18,7 @@ namespace UniShareAPI.Models.DTO.Response.Search.ProfileReviews
         public int Environment { get; set; }
         public int Difficulty { get; set; }
         public int Grading { get; set; }
-        public int Litterature { get; set; }
+        public int Literature { get; set; }
         public int Overall { get; set; }
     }
 }

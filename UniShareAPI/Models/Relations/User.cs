@@ -40,6 +40,7 @@ namespace UniShareAPI.Models.Relations
         public virtual ICollection<UserCourse> Ratings { get; set; }
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; }
         public virtual ICollection<Project> Projects { get; set; }
+        public virtual ICollection<Request> Requests { get; set; }
         public virtual ICollection<Degree> Degrees { get; set; }
 
         public virtual ICollection<Review> Reviews { get; set; }

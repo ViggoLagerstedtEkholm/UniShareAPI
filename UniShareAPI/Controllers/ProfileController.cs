@@ -54,6 +54,8 @@ namespace UniShareAPI.Controllers
                 Joined = user.Joined,
                 LinkedIn = user.LinkedIn,
                 GitHub = user.GitHub,
+                Description = user.Description,
+                Age = user.Age
             };
 
             return Ok(userModel);

@@ -8,11 +8,13 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using UniShareAPI.Migrations;
 using UniShareAPI.Models.DTO.Requests.Filter;
 using UniShareAPI.Models.DTO.Requests.Search.Comments;
 using UniShareAPI.Models.DTO.Requests.Search.Course;
 using UniShareAPI.Models.DTO.Requests.Search.People;
 using UniShareAPI.Models.DTO.Requests.Search.Ratings;
+using UniShareAPI.Models.DTO.Requests.Search.Requests;
 using UniShareAPI.Models.DTO.Requests.Search.Review;
 using UniShareAPI.Models.DTO.Requests.Search.UserReview;
 using UniShareAPI.Models.DTO.Response.Search.Comments;
@@ -20,6 +22,7 @@ using UniShareAPI.Models.DTO.Response.Search.Courses;
 using UniShareAPI.Models.DTO.Response.Search.People;
 using UniShareAPI.Models.DTO.Response.Search.ProfileReviews;
 using UniShareAPI.Models.DTO.Response.Search.Ratings;
+using UniShareAPI.Models.DTO.Response.Search.Requests;
 using UniShareAPI.Models.DTO.Response.Search.Reviews;
 using UniShareAPI.Models.Extensions;
 using UniShareAPI.Models.Relations;
@@ -35,6 +38,91 @@ namespace UniShareAPI.Controllers
         public SearchController(AppDbContext appDbContext)
         {
             _appDbContext = appDbContext;
+        }
+
+
+        [HttpPost]
+        [Route("requests")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+        public IActionResult SearchRequest([FromBody] RequestFilter filter)
+        {
+            RequestFilterResultResponse results = SearchRequestsWithTextAsync(filter);
+            return Ok(results);
+        }
+        private RequestFilterResultResponse SearchRequestsWithTextAsync(RequestFilter filter)
+        {
+            string search = filter.Search;
+            var count = 0;
+            IQueryable<RequestResponse> requests;
+
+            if (search == null)
+            {
+                count = _appDbContext.Requests.Join(_appDbContext.User, u => u.UserId, uir => uir.Id, (u, uir) => new { u, uir }).Count();
+
+                requests = _appDbContext.Requests
+               .Join(_appDbContext.User, u => u.UserId, uir => uir.Id, (u, uir) => new { u, uir })
+               .Select(p => new RequestResponse
+               {
+                   Name = p.u.Name,
+                   City = p.u.City,
+                   Code = p.u.Code,
+                   Country = p.u.Country,
+                   Credits = p.u.Credits,
+                   Date = p.u.Date.ToString(),
+                   Image = p.uir.Image,
+                   University = p.u.University,
+                   Username = p.uir.UserName,
+                   Id = p.u.Id
+               });
+            }
+            else
+            {
+                count = _appDbContext.Requests
+                .Join(_appDbContext.User, u => u.UserId, uir => uir.Id, (u, uir) => new { u, uir })
+                .Where(m => m.u.Name.Contains(search) ||
+                m.u.Credits.ToString().Contains(search) ||
+                m.u.University.ToLower().Contains(search) ||
+                m.u.Country.ToLower().Contains(search) ||
+                m.u.City.ToLower().Contains(search) ||
+                m.u.Code.ToLower().Contains(search) ||
+                m.u.Date.ToString().Contains(search) ||
+                m.uir.UserName.ToLower().Contains(search)).Count();
+
+                requests = _appDbContext.Requests
+                .Join(_appDbContext.User, u => u.UserId, uir => uir.Id, (u, uir) => new { u, uir })
+                .Where(m => m.u.Name.Contains(search) ||
+                m.u.Credits.ToString().Contains(search) ||
+                m.u.University.ToLower().Contains(search) ||
+                m.u.Country.ToLower().Contains(search) ||
+                m.u.City.ToLower().Contains(search) ||
+                m.u.Code.ToLower().Contains(search) ||
+                m.u.Date.ToString().Contains(search) ||
+                m.uir.UserName.ToLower().Contains(search))
+                .Select(p => new RequestResponse
+                {
+                    Name = p.u.Name,
+                    City = p.u.City,
+                    Code = p.u.Code,
+                    Country = p.u.Country,
+                    Credits = p.u.Credits,
+                    Date = p.u.Date.ToString(),
+                    Image = p.uir.Image,
+                    University = p.u.University,
+                    Username = p.uir.UserName,
+                    Id = p.u.Id
+                });
+            }
+            Pagination pagination = CalculateOffsets(count, filter.Page, filter.ResultsPerPage);
+            List<RequestResponse> filteredResults = ApplyOrderingRequestsFilters(requests, filter).Skip(pagination.PageFirstResultIndex).Take(pagination.ResultsPerPage).ToList();
+
+            var peopleResult = new RequestFilterResultResponse
+            {
+                Pagination = pagination,
+                Requests = filteredResults,
+                TotalMatches = count
+            };
+
+            return peopleResult;
         }
 
         [HttpPost]
@@ -73,7 +161,7 @@ namespace UniShareAPI.Controllers
                     Environment = p.uir.Environment,
                     Fulfilling = p.uir.Fulfilling,
                     Grading = p.uir.Grading,
-                    Litterature = p.uir.Litterature,
+                    Literature = p.uir.Literature,
                     Name = p.u.Name,
                     Overall = p.uir.Overall,
                     University = p.u.University
@@ -112,14 +200,14 @@ namespace UniShareAPI.Controllers
                     Environment = p.uir.Environment,
                     Fulfilling = p.uir.Fulfilling,
                     Grading = p.uir.Grading,
-                    Litterature = p.uir.Litterature,
+                    Literature = p.uir.Literature,
                     Name = p.u.Name,
                     Overall = p.uir.Overall,
                     University = p.u.University,
                     Code = p.u.Code
                 });
             }
-            
+
             Pagination pagination = CalculateOffsets(count, filter.Page, filter.ResultsPerPage);
             List<ProfileReviewResponse> filteredResults = ApplyOrderingUserReviewFilters(reviews, filter).Skip(pagination.PageFirstResultIndex).Take(pagination.ResultsPerPage).ToList();
 
@@ -129,7 +217,7 @@ namespace UniShareAPI.Controllers
                 ProfileReviews = filteredResults,
                 TotalMatches = count
             };
-            
+
             return peopleResult;
         }
 
@@ -247,7 +335,7 @@ namespace UniShareAPI.Controllers
                     Environment = p.uir.Environment,
                     Fulfilling = p.uir.Fulfilling,
                     Grading = p.uir.Grading,
-                    Litterature = p.uir.Litterature,
+                    Literature = p.uir.Literature,
                     Overall = p.uir.Overall,
                     Username = p.u.UserName,
                     Image = p.u.Image,
@@ -280,7 +368,7 @@ namespace UniShareAPI.Controllers
                     Environment = p.uir.Environment,
                     Fulfilling = p.uir.Fulfilling,
                     Grading = p.uir.Grading,
-                    Litterature = p.uir.Litterature,
+                    Literature = p.uir.Literature,
                     Overall = p.uir.Overall,
                     Username = p.u.UserName,
                     Image = p.u.Image,
@@ -541,6 +629,16 @@ namespace UniShareAPI.Controllers
         }
 
         //TODO, Refactor to generics later...
+
+        private static List<RequestResponse> ApplyOrderingRequestsFilters(IQueryable<RequestResponse> users, RequestFilter filter)
+        {
+            return filter.Order switch
+            {
+                "Ascending" => users.OrderBy(filter.Option, true).ToList(),
+                "Descending" => users.OrderBy(filter.Option, false).ToList(),
+                _ => new List<RequestResponse>(),
+            };
+        }
         private static List<RatingsResponse> ApplyOrderingRatingsFilters(IQueryable<RatingsResponse> users, RatingsFilter filter)
         {
             return filter.Order switch

@@ -15,6 +15,7 @@ namespace UniShareAPI.Models.Relations
     {
         public DbSet<User> User { get; set; }
         public DbSet<Project> Projects { get; set; }
+        public DbSet<Request> Requests { get; set; }
         public DbSet<Degree> Degrees { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Course> Courses { get; set; }
@@ -25,9 +26,7 @@ namespace UniShareAPI.Models.Relations
         public DbSet<Review> Reviews { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options): base(options)
-        {
-
-        }
+        {}
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -38,6 +37,11 @@ namespace UniShareAPI.Models.Relations
 
             builder.Entity<User>()
                 .HasMany(c => c.Projects)
+                .WithOne(e => e.User)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<User>()
+                .HasMany(c => c.Requests)
                 .WithOne(e => e.User)
                 .OnDelete(DeleteBehavior.Cascade);
 
@@ -58,7 +62,6 @@ namespace UniShareAPI.Models.Relations
             builder.Entity<UserCourse>()
                 .HasKey(pc => new { pc.CourseId, pc.UserId });
 
-            //Reviews, Users and Courses.
             builder.Entity<Review>()
                 .HasKey(pc => new { pc.CourseId, pc.UserId });
 

@@ -1,24 +1,19 @@
-﻿using Microsoft.AspNetCore.Identity;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
+using UniShareAPI.Models.Relations;
 
-namespace UniShareAPI.Models.Relations
+namespace UniShareAPI.Models.DTO.Requests
 {
-    public class Request
+    public class CourseRequest
     {
-        public int Id { get; set; }
         public string Name { get; set; }
         public double Credits { get; set; }
         public string Country { get; set; }
         public string City { get; set; }
         public string University { get; set; }
-        public string UserId { get; set; }
-        public User User { get; set; }
         public string Description { get; set; }
-        public DateTime Date { get; set; }
         public string Code { get; set; }
         public string Link { get; set; }
     }

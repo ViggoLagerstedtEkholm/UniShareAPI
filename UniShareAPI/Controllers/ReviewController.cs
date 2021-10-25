@@ -15,7 +15,7 @@ namespace UniShareAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Standard, Admin")]
     public class ReviewController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
@@ -29,7 +29,7 @@ namespace UniShareAPI.Controllers
 
         [HttpPost]
         [Route("write")]
-        public async Task<IActionResult> PostReview([FromForm] ReviewRequest reviewRequest)
+        public async Task<IActionResult> PostReview([FromBody] ReviewRequest reviewRequest)
         {
             var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
             string userId = user.Id;
@@ -46,7 +46,7 @@ namespace UniShareAPI.Controllers
                 course.Environment = reviewRequest.Environment;
                 course.Fulfilling = reviewRequest.Fulfilling;
                 course.Grading = reviewRequest.Grading;
-                course.Litterature = reviewRequest.Litterature;
+                course.Literature = reviewRequest.Literature;
                 course.Overall = reviewRequest.Overall;
                 course.Text = reviewRequest.Text;
                 course.UserId = userId;
@@ -65,7 +65,7 @@ namespace UniShareAPI.Controllers
                     Environment = reviewRequest.Environment,
                     Fulfilling = reviewRequest.Fulfilling,
                     Grading = reviewRequest.Grading,
-                    Litterature = reviewRequest.Litterature,
+                    Literature = reviewRequest.Literature,
                     Overall = reviewRequest.Overall,
                     Text = reviewRequest.Text,
                     UserId = userId,
@@ -85,6 +85,12 @@ namespace UniShareAPI.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var review = await _appDbContext.Reviews.FirstOrDefaultAsync(x => x.UserId.Equals(HttpContext.GetUserId()) && x.CourseId.Equals(id));
+
+            if(review == null)
+            {
+                return BadRequest("Can't delete that review!");
+            }
+
             _appDbContext.Remove(review);
             await _appDbContext.SaveChangesAsync();
             return Ok();

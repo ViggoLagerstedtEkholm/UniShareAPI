@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UniShareAPI.Models.DTO.Requests.Course;
 using UniShareAPI.Models.DTO.Response.Courses;
+using UniShareAPI.Models.DTO.Response.Search.Courses;
 using UniShareAPI.Models.Extensions;
 using UniShareAPI.Models.Relations;
 
@@ -61,10 +62,20 @@ namespace UniShareAPI.Controllers
 
         [HttpGet]
         [Route("graph/{id}")]
-        public async Task<IActionResult> GetGraphData(int id)
+        public IActionResult GetGraphData(int id)
         {
-            var course = await _appDbContext.Courses.FirstOrDefaultAsync(x => x.Id.Equals(id));
-            return Ok(course);
+            var results = (from item in _appDbContext.UserCourses
+                           where item.CourseId == id
+                           group item by new { item.Rating} into grouping
+                           orderby grouping.Key.Rating descending
+                           select new GraphData
+                           {
+                              Rating = grouping.Key.Rating,
+                              Count = grouping.Count()
+                           }).ToList();
+
+
+            return Ok(results);
         }
 
         [HttpPost]
@@ -75,13 +86,22 @@ namespace UniShareAPI.Controllers
             var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
             var course = await _appDbContext.Courses.FirstOrDefaultAsync(x => x.Id.Equals(rating.Id));
 
+            string userId = user.Id;
+            int courseId = course.Id;
+
+            if (rating.Score == 0)
+            {
+                var removeRating = await _appDbContext.UserCourses.FirstOrDefaultAsync(x => x.User.Id.Equals(userId) && x.CourseId == course.Id);
+                _appDbContext.Remove(removeRating);
+                _appDbContext.SaveChanges();
+                return Ok();
+            }
+
             if(course == null)
             {
                 return NotFound();
             }
 
-            string userId = user.Id;
-            int courseId = course.Id;
 
             var existingRating = await _appDbContext.UserCourses.FirstOrDefaultAsync(x => x.User.Id.Equals(userId) && x.CourseId == course.Id);
 

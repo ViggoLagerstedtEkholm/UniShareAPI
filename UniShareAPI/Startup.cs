@@ -73,8 +73,8 @@ namespace UniShareAPI
                 jwt.TokenValidationParameters = tokenValidationParams;
             });
 
-            services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddEntityFrameworkStores<AppDbContext>();
+            services.AddIdentity<User, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
+                                    .AddEntityFrameworkStores<AppDbContext>();
 
 
             services.AddControllers();
@@ -111,9 +111,8 @@ namespace UniShareAPI
             app.UseHttpsRedirection();
 
             app.UseRouting();
-
-            app.UseAuthorization();
             app.UseAuthentication();
+            app.UseAuthorization();
 
 
             app.UseEndpoints(endpoints =>
