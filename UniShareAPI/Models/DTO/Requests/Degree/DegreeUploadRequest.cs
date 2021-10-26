@@ -3,40 +3,37 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
+using UniShareAPI.Models.Validation;
 
 namespace UniShareAPI.Models.DTO.Requests.Degree
 {
     public class DegreeUploadRequest
     {
-        [Required]
-        [MaxLength(300)]
+        [Required(ErrorMessage = "Name is required")]
         [RegularExpression(@"^[\s\S]{1,300}$")]
         public string Name { get; set; }
 
-        [Required]
-        [MaxLength(100)]
-        [RegularExpression(@"^[\s\S]{1,300}$")]
+        [Required(ErrorMessage = "Field is required")]
+        [RegularExpression(@"^[\s\S]{1,300}$", ErrorMessage = "Field needs at least 1 character and maximum 300 characters.")]
         public string Field { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Start date is required")]
         public DateTime StartDate { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "End date is required")]
+        [CompareDatesValidatorAttribute("StartDate")]
         public DateTime EndDate { get; set; }
 
-        [Required]
-        [MaxLength(120)]
-        [RegularExpression(@"^.{1,120}$")]
+        [Required(ErrorMessage = "City is required")]
+        [RegularExpression(@"^.{1,120}$", ErrorMessage = "City needs at least 1 character and maximum 120 characters.")]
         public string City { get; set; }
 
-        [Required]
-        [MaxLength(100)]
-        [RegularExpression(@"^.{1,100}$")]
+        [Required(ErrorMessage = "University is required")]
+        [RegularExpression(@"^.{1,100}$", ErrorMessage = "University needs at least 1 character and maximum 100 characters.")]
         public string University { get; set; }
 
-        [Required]
-        [MaxLength(56)]
-        [RegularExpression(@"^.{1,56}$")]
+        [Required(ErrorMessage = "Country is required")]
+        [RegularExpression(@"^.{1,56}$", ErrorMessage = "Country needs at least 1 character and maximum 56 characters.")]
         public string Country { get; set; }
     }
 }

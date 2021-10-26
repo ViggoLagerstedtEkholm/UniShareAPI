@@ -30,6 +30,8 @@ namespace UniShareAPI.Models.DTO.Requests
         [MaxLength(50)]
         [RegularExpression(@"^(?=[a-zA-Z0-9._]{2,50}$)(?!.*[_.]{2})[^_.].*[^_.]$")]
         public string Username { get; set; }
+
+        [MaxLength(500)]
         public string Description { get; set; }
     }
 }

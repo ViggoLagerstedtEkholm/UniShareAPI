@@ -12,24 +12,24 @@ namespace UniShareAPI.Models.Relations
 {
     public class User : IdentityUser
     {
-
-        //First name
+        [MaxLength(100, ErrorMessage = "First name needs at least 2 characters and maximum 100."), MinLength(2)]
         public string Firstname { get; set; }
 
-        //Last name
+        [MaxLength(100, ErrorMessage = "Last name needs at least 2 characters and maximum 100."), MinLength(2)]
         public string Lastname { get; set; }
 
-        //Description
+        [MaxLength(500, ErrorMessage = "Description can only be 500 characters."), MinLength(0)]
         public string Description { get; set; }
+
+        [Url]
         public string GitHub { get; set; }
+
+        [Url]
         public string LinkedIn { get; set; }
-        //Age
+
+        [Range(13, 120, ErrorMessage = "You must be at least 13 years old and at the most 120.")]
         public int Age { get; set; }
-
-        //Visits
         public int Visits { get; set; }
-
-        //Joined and last seen date and time
         public DateTime LastSeenDate { get; set; }
         public DateTime Joined { get; set; }
         //Image
@@ -42,14 +42,9 @@ namespace UniShareAPI.Models.Relations
         public virtual ICollection<Project> Projects { get; set; }
         public virtual ICollection<Request> Requests { get; set; }
         public virtual ICollection<Degree> Degrees { get; set; }
-
         public virtual ICollection<Review> Reviews { get; set; }
-
-        //Comments
         public virtual ICollection<Comment> Writer { get; set; }
         public virtual ICollection<Comment> Receiver { get; set; }
-
-        //Relation
         public virtual ICollection<Relation> From { get; set; }
         public virtual ICollection<Relation> To { get; set; }
     }
