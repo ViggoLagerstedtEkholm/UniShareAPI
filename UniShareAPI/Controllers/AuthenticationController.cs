@@ -52,16 +52,18 @@ namespace UniShareAPI.Controllers
             if (ModelState.IsValid)
             {
                 // We can utilise the model
-                var existingUser = await _userManager.FindByEmailAsync(request.Email);
+                var existingUserWithEmail = await _userManager.FindByEmailAsync(request.Email);
 
-                if (existingUser != null)
+                if (existingUserWithEmail != null)
                 {
-                    return BadRequest( new AuthenticationResult()
-                    {
-                        Errors = new List<string>() {
-                                "Email already in use"
-                        },
-                    });
+                    return BadRequest("Email already in use");
+                }
+
+                var existingUserWithUsername = await _appDbContext.Users.FirstOrDefaultAsync(x => x.UserName.Equals(request.Username));
+
+                if (existingUserWithUsername != null)
+                {
+                    return BadRequest("Username already in use");
                 }
 
                 var newUser = new User() {

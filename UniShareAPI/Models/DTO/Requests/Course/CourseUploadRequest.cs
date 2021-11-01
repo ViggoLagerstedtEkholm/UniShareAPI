@@ -7,17 +7,16 @@ using UniShareAPI.Models.Relations;
 
 namespace UniShareAPI.Models.DTO.Requests
 {
-    public class CourseRequest
+    public class CourseUploadRequest
     {
-        [Required(ErrorMessage = "City is required")]
+        [Required(ErrorMessage = "Name is required")]
         [RegularExpression(@"^[\s\S]{1,300}$", ErrorMessage = "Name needs at least 1 character and maximum 300 characters.")]
         public string Name { get; set; }
 
-        [Required(ErrorMessage = "City is required")]
-        [RegularExpression(@"^[+]?([0-9]+\.?[0-9]*|\.[0-9]+)$", ErrorMessage = "Credits are not valid!")]
+        [Required(ErrorMessage = "Credits is required")]
         public double Credits { get; set; }
 
-        [Required(ErrorMessage = "City is required")]
+        [Required(ErrorMessage = "Country is required")]
         [RegularExpression(@"^.{1,120}$", ErrorMessage = "City needs at least 1 character and maximum 120 characters.")]
         public string Country { get; set; }
 
@@ -38,6 +37,7 @@ namespace UniShareAPI.Models.DTO.Requests
         public string Code { get; set; }
 
         [Url]
+        [Required(ErrorMessage = "Link is required")]
         public string Link { get; set; }
     }
 }

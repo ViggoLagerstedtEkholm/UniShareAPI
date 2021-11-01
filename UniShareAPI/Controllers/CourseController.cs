@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
+using UniShareAPI.Models.DTO.Requests;
 using UniShareAPI.Models.DTO.Requests.Course;
 using UniShareAPI.Models.DTO.Response.Courses;
 using UniShareAPI.Models.DTO.Response.Search.Courses;
@@ -24,6 +26,31 @@ namespace UniShareAPI.Controllers
         {
             _userManager = userManager;
             _appDbContext = appDbContext;
+        }
+
+        [HttpPost]
+        [Route("update")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+        public async Task<IActionResult> UpdateCourse([FromBody] CourseUpdateRequest course)
+        {
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
+
+            var existingCourse = await _appDbContext.Courses.FirstOrDefaultAsync(x => x.Id == course.CourseID);
+
+            existingCourse.Id = course.CourseID;
+            existingCourse.City = course.City;
+            existingCourse.Code = course.Code;
+            existingCourse.Country = course.Country;
+            existingCourse.Credits = course.Credits;
+            existingCourse.Description = course.Description;
+            existingCourse.Link = course.Link;
+            existingCourse.Name = course.Name;
+            existingCourse.University = course.University;           
+
+            _appDbContext.Courses.Update(existingCourse);
+            await _appDbContext.SaveChangesAsync();
+
+            return Ok("Uploaded request");
         }
 
         [HttpGet]

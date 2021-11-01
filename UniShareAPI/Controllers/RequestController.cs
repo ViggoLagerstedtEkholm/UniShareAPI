@@ -29,7 +29,7 @@ namespace UniShareAPI.Controllers
 
         [HttpPost]
         [Route("upload")]
-        public async Task<IActionResult> UploadRequest([FromBody] CourseRequest courseRequest)
+        public async Task<IActionResult> UploadRequest([FromBody] CourseUploadRequest courseRequest)
         {
             var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
 
@@ -55,7 +55,7 @@ namespace UniShareAPI.Controllers
 
         [HttpPost]
         [Route("update")]
-        public async Task<IActionResult> UpdateRequest([FromBody] CourseRequest courseRequest)
+        public async Task<IActionResult> UpdateRequest([FromBody] CourseUploadRequest courseRequest)
         {
             var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
 
