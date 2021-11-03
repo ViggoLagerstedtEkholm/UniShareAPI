@@ -9,6 +9,15 @@ namespace UniShareAPI.Models.DTO.Requests
 {
     public class AccountSettingsRequest
     {
+        [Required]
+        [MaxLength(50)]
+        [RegularExpression(@"^(?=[a-zA-Z0-9._]{2,50}$)(?!.*[_.]{2})[^_.].*[^_.]$")]
+        public string Username { get; set; }
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
+
         [PersonalData]
         [Range(13, 100, ErrorMessage = "You must be at least 13 years old and at the most 100.")]
         public int Age { get; set; }
@@ -22,14 +31,6 @@ namespace UniShareAPI.Models.DTO.Requests
         [MaxLength(100)]
         [RegularExpression(@"^(?=.{2,100}$)[a-zA-Z\u00C0-\u00ff]+(?:[-'\s][a-zA-Z\u00C0-\u00ff]+)*$")]
         public string Lastname { get; set; }
-
-        [Required]
-        [EmailAddress]
-        public string Email { get; set; }
-        [Required]
-        [MaxLength(50)]
-        [RegularExpression(@"^(?=[a-zA-Z0-9._]{2,50}$)(?!.*[_.]{2})[^_.].*[^_.]$")]
-        public string Username { get; set; }
 
         [MaxLength(500)]
         public string Description { get; set; }

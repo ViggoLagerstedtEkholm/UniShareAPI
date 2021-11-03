@@ -74,8 +74,8 @@ namespace UniShareAPI
             });
 
             services.AddIdentity<User, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
-                                    .AddEntityFrameworkStores<AppDbContext>();
-
+                                    .AddEntityFrameworkStores<AppDbContext>()
+                                    .AddDefaultTokenProviders();
 
             services.AddControllers();
 

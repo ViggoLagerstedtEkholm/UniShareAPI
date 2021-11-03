@@ -104,10 +104,16 @@ namespace UniShareAPI.Controllers
         {
             var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.UserName == username);
 
-            if (user.Image != null)
+            if(user == null)
+            {
+                return BadRequest("No such user.");
+            }
+
+            if ( user.Image != null)
             {
                 user.Image = user.Image;
             }
+
             return Ok(user.Image);
         }
     }

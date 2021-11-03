@@ -33,31 +33,30 @@ namespace UniShareAPI.Controllers
         [Route("account/update")]
         public async Task<IActionResult> UpdateAccountSettings([FromBody] AccountSettingsRequest accountSettingsRequest)
         {
-            if (ModelState.IsValid)
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
+
+            var userWithUsername = await _appDbContext.Users.FirstOrDefaultAsync(x => x.UserName == accountSettingsRequest.Username);
+
+            if (!user.UserName.Equals(accountSettingsRequest.Username))
             {
-                var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
-
-                var userWithUsername = await _appDbContext.Users.FirstOrDefaultAsync(x => x.UserName == accountSettingsRequest.Username);
-
-                if(userWithUsername == null)
+                if (userWithUsername == null)
                 {
                     user.UserName = accountSettingsRequest.Username;
                 }
                 else
                 {
-                    return BadRequest();
+                    return BadRequest("That username is taken.");
                 }
-
-                user.Firstname = accountSettingsRequest.Firstname;
-                user.Lastname = accountSettingsRequest.Lastname;
-                user.Description = accountSettingsRequest.Description;
-                user.Age = accountSettingsRequest.Age;
-
-                await _userManager.UpdateAsync(user);
-
-                return Ok();
             }
-            return BadRequest();
+
+            user.Firstname = accountSettingsRequest.Firstname;
+            user.Lastname = accountSettingsRequest.Lastname;
+            user.Description = accountSettingsRequest.Description;
+            user.Age = accountSettingsRequest.Age;
+
+            await _userManager.UpdateAsync(user);
+
+            return Ok();
         }
         
 

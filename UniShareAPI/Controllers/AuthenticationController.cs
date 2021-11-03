@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Cors;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,15 +9,20 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Net.Mail;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using UniShareAPI.Configuration;
 using UniShareAPI.Models.DTO;
 using UniShareAPI.Models.DTO.Requests;
+using UniShareAPI.Models.DTO.Requests.Auth;
 using UniShareAPI.Models.DTO.Response;
+using UniShareAPI.Models.Extensions;
 using UniShareAPI.Models.Relations;
 
 namespace UniShareAPI.Controllers
@@ -43,6 +50,59 @@ namespace UniShareAPI.Controllers
             _jwtConfig = optionsMonitor.CurrentValue;
             _tokenValidationParams = tokenValidationParameters;
             _appDbContext = appDbContext;
+        }
+
+        [HttpPost]
+        [Route("Delete/Account")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Standard")]
+        public async Task<IActionResult> DeleteAccount()
+        {
+            var userId = HttpContext.GetUserId();
+
+            var user = await _userManager.FindByIdAsync(userId);
+
+            var relation = _appDbContext.Relations.Where(x => x.FromId.Equals(userId) || x.ToId.Equals(userId));
+            _appDbContext.Relations.RemoveRange(relation);
+
+            var comments = _appDbContext.Comments.Where(x => x.AuthorId.Equals(userId) || x.ProfileId.Equals(userId));
+            _appDbContext.Comments.RemoveRange(comments);
+
+            await _appDbContext.SaveChangesAsync();
+
+            var result = await _userManager.DeleteAsync(user);
+
+            if (result.Succeeded)
+            {
+                return Ok("Removed user.");
+            }
+
+            return BadRequest("Could not remove user.");
+        }
+
+        [HttpPost]
+        [Route("Verify")]
+        public async Task<IActionResult> VerifyAsync([FromBody] VerifyRequest verifyRequest)
+        {
+            if(verifyRequest.Id == null || verifyRequest.Token == null)
+            {
+                return BadRequest("Invalid verification. 1");
+            }
+
+            var user = await _userManager.FindByIdAsync(verifyRequest.Id);
+
+            if (user == null)
+            {
+                return BadRequest("No such user.");
+            }
+
+            var result = await _userManager.ConfirmEmailAsync(user, verifyRequest.Token);
+
+            if (result.Succeeded)
+            {
+                return Ok("Verified email!");
+            }
+           
+           return BadRequest("Invalid verification. Id: " + verifyRequest.Id + ", Token: " + verifyRequest.Token);
         }
 
         [HttpPost]
@@ -80,6 +140,14 @@ namespace UniShareAPI.Controllers
                 if (isCreated.Succeeded)
                 {
                     await _userManager.AddToRoleAsync(newUser, "Standard");
+
+                    var success = await SendVerificationEmailAsync(newUser);
+
+                    if (!success)
+                    {
+                        await _userManager.DeleteAsync(newUser);
+                        return BadRequest("Could not send verification email!" );
+                    }
                 }
 
                 if (!isCreated.Succeeded)
@@ -103,6 +171,48 @@ namespace UniShareAPI.Controllers
             });
         }
 
+        private async Task<bool> SendVerificationEmailAsync(User RegisteredUser)
+        {
+            var success = true;
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(RegisteredUser);
+            var encodedToken = HttpUtility.UrlEncode(token);
+            var confirmationLink = "http://localhost:3000/Verify?Id=" + RegisteredUser.Id + "&Token=" + encodedToken;
+
+            SmtpClient smtpClient = new SmtpClient()
+            {
+                Host = "smtp.gmail.com",
+                Port = 587,
+                EnableSsl = true,
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                UseDefaultCredentials = false,
+                Credentials = new System.Net.NetworkCredential()
+                {
+                    UserName = "EMAIL",
+                    Password = "PASSWORD"
+                }
+            };
+
+            MailAddress FromEmail = new MailAddress("unishare.validation@gmail.com", "UniShare");
+            MailAddress ToEmail = new MailAddress(RegisteredUser.Email, RegisteredUser.UserName);
+            MailMessage Message = new MailMessage()
+            {
+                From = FromEmail,
+                Subject = "Verification",
+                Body = "Here is your verification URL: " + confirmationLink
+            };
+
+            Message.To.Add(ToEmail);
+            try
+            {
+                smtpClient.Send(Message);
+            }
+            catch (Exception e)
+            {
+                success = false;
+            }
+
+            return success;
+        }
         
         [HttpPost]
         [Route("Login")]
