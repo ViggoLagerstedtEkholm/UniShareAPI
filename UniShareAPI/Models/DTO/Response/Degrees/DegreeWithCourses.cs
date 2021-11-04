@@ -10,5 +10,6 @@ namespace UniShareAPI.Models.DTO.Response.Degrees
     {
         public Degree Degree { get; set; }
         public List<Course> Courses { get; set; }
+        public double TotalCredits { get; set; }
     }
 }

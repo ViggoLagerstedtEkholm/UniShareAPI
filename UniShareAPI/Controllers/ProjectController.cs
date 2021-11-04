@@ -83,6 +83,7 @@ namespace UniShareAPI.Controllers
                     project.Name = projectUpdate.Name;
                     project.Description = projectUpdate.Description;
                     project.Link = projectUpdate.Link;
+                    project.Added = DateTime.Now;
 
                     _appDbContext.Projects.Update(project);
                     await _appDbContext.SaveChangesAsync();

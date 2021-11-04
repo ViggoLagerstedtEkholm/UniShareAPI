@@ -141,6 +141,7 @@ namespace UniShareAPI.Controllers
                 {
                     await _userManager.AddToRoleAsync(newUser, "Standard");
 
+                    /*
                     var success = await SendVerificationEmailAsync(newUser);
 
                     if (!success)
@@ -148,6 +149,7 @@ namespace UniShareAPI.Controllers
                         await _userManager.DeleteAsync(newUser);
                         return BadRequest("Could not send verification email!" );
                     }
+                    */
                 }
 
                 if (!isCreated.Succeeded)

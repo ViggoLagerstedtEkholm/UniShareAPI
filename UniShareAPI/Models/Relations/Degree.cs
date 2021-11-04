@@ -19,7 +19,11 @@ namespace UniShareAPI.Models.Relations
         [Required(ErrorMessage = "Field is required")]
         [MaxLength(100)]
         public string Field { get; set; }
+
+        [Column(TypeName = "date")]
         public DateTime StartDate { get; set; }
+
+        [Column(TypeName = "date")]
         public DateTime EndDate { get; set; }
 
         [Required(ErrorMessage = "City is required")]

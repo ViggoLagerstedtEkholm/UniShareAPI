@@ -24,6 +24,8 @@ namespace UniShareAPI.Models.Relations
         public string Link { get; set; }
 
         public byte[] Image { get; set; }
+
+        [Column(TypeName = "date")]
         public DateTime Added { get; set; }
         public string UserId { get; set; }
         public User User { get; set; }

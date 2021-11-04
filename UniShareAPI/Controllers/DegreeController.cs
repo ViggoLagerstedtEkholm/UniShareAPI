@@ -53,6 +53,10 @@ namespace UniShareAPI.Controllers
             await _appDbContext.Degrees.AddAsync(degree);
             await _appDbContext.SaveChangesAsync();
 
+            user.ActiveDegreeId = degree.Id;
+
+            await _userManager.UpdateAsync(user);
+
             return Ok();
         }
 
@@ -142,10 +146,17 @@ namespace UniShareAPI.Controllers
                 where degreeCourses.DegreeId == degreeId
                 select courses).ToList();
 
+                double totalCredits = 0;
+                foreach(var course in result)
+                {
+                    totalCredits += course.Credits;
+                }
+
                 DegreeWithCourses coursesDegree = new()
                 {
                     Courses = result,
-                    Degree = aDegree
+                    Degree = aDegree,
+                    TotalCredits = totalCredits
                 };
 
                 degreeWithCourses.Add(coursesDegree);
