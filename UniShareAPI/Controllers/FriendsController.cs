@@ -210,19 +210,27 @@ namespace UniShareAPI.Controllers
         public async Task<IActionResult> GetFriendsAsync(string username)
         {
             var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.UserName.Equals(username));
-            string userId = user.Id;
 
-            var friends = _appDbContext.User
-                          .Join(_appDbContext.Relations, u => u.Id, uir => uir.ToId, (u, uir) => new { u, uir })
-                          .Where(m => m.uir.FromId.Equals(userId) && m.uir.Status.Equals("F"))
-                          .Select(p => new SentRequest
-                          {
-                              Image = p.u.Image,
-                              UserId = p.u.Id,
-                              Username = p.u.UserName,
-                          });
+            if(user != null)
+            {
+                string userId = user.Id;
 
-            return Ok(friends);
+                var friends = _appDbContext.User
+                              .Join(_appDbContext.Relations, u => u.Id, uir => uir.ToId, (u, uir) => new { u, uir })
+                              .Where(m => m.uir.FromId.Equals(userId) && m.uir.Status.Equals("F"))
+                              .Select(p => new SentRequest
+                              {
+                                  Image = p.u.Image,
+                                  UserId = p.u.Id,
+                                  Username = p.u.UserName,
+                              });
+                return Ok(friends);
+
+            }
+            else
+            {
+                return BadRequest();
+            }
         }
     }
 }

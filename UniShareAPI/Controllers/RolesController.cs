@@ -1,17 +1,20 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using UniShareAPI.Models.Relations;
-
 namespace UniShareAPI.Controllers
 {
-    [Route("api/[controller]")]  // api/setup
+[Route("api/[controller]")]  // api/setup
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
     public class RolesController : ControllerBase
     {
         private readonly AppDbContext _context;
