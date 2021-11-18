@@ -395,8 +395,12 @@ namespace UniShareAPI.Controllers
         [Route("comments")]
         public async Task<IActionResult> SearchComments([FromBody] CommentsFilter filter)
         {
-            CommentFilterResultResponse results = await SearchCommentsWithTextAsync(filter);
-            return Ok(results);
+            if (ModelState.IsValid)
+            {
+                CommentFilterResultResponse results = await SearchCommentsWithTextAsync(filter);
+                return Ok(results);
+            }
+            return BadRequest("Invalid.");
         }
 
         private async Task<CommentFilterResultResponse> SearchCommentsWithTextAsync(CommentsFilter filter)
@@ -432,14 +436,12 @@ namespace UniShareAPI.Controllers
                 count = _appDbContext.User
                 .Join(_appDbContext.Comments, u => u.Id, uir => uir.ProfileId, (u, uir) => new { u, uir })
                 .Where(m => m.uir.ProfileId.Equals(profileId) &&
-                (m.u.UserName.ToLower().Contains(search) ||
-                m.uir.Text.ToLower().Contains(search))).Count();
+                (m.uir.Text.ToLower().Contains(search))).Count();
 
                 comments = _appDbContext.User
                     .Join(_appDbContext.Comments, u => u.Id, uir => uir.ProfileId, (u, uir) => new { u, uir })
                     .Where(m => m.uir.ProfileId.Equals(profileId) &&
-                    (m.u.UserName.ToLower().Contains(search) ||
-                    m.uir.Text.ToLower().Contains(search)))
+                    (m.uir.Text.ToLower().Contains(search)))
                 .Select(p => new CommentResponse
                 {
                     CommentId = p.uir.Id,

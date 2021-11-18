@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Threading.Tasks;
 using UniShareAPI.Models.DTO.Requests.Comment;
 using UniShareAPI.Models.Extensions;
@@ -73,7 +74,8 @@ namespace UniShareAPI.Controllers
             {
                 ProfileId = recevier,
                 AuthorId = writer,
-                Text = text
+                Text = text,
+                Date = DateTime.Now
             };
 
             _appDbContext.Comments.Add(commentObj);
