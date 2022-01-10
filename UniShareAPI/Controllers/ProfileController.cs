@@ -46,7 +46,7 @@ namespace UniShareAPI.Controllers
                 Email = user.Email,
                 Firstname = user.Firstname,
                 Lastname = user.Lastname,
-                Image = null,
+                Image = user.Image,
                 Username = user.UserName,
                 Visits = user.Visits,
                 Id = user.Id,
@@ -98,18 +98,19 @@ namespace UniShareAPI.Controllers
             }
         }
 
+
         [HttpGet]
         [Route("image/get/{username}")]
         public async Task<IActionResult> GetImageAsync(string username)
         {
             var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.UserName == username);
 
-            if(user == null)
+            if (user == null)
             {
                 return BadRequest("No such user.");
             }
 
-            if ( user.Image != null)
+            if (user.Image != null)
             {
                 user.Image = user.Image;
             }

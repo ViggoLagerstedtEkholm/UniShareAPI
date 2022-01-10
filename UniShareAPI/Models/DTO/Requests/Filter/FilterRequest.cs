@@ -12,8 +12,6 @@ namespace UniShareAPI.Models.DTO.Requests.Filter
     {
         public int Page { get; set; }
 
-        public int ResultsPerPage { get; set; }
-
         [StringRange(AllowableValues = new[] { "Descending", "Ascending"}, ErrorMessage = "Not a valid order.")]
         public string Order { get; set; }
 

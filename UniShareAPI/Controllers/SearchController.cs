@@ -112,7 +112,7 @@ namespace UniShareAPI.Controllers
                     Id = p.u.Id
                 });
             }
-            Pagination pagination = CalculateOffsets(count, filter.Page, filter.ResultsPerPage);
+            Pagination pagination = CalculateOffsets(count, filter.Page);
             List<RequestResponse> filteredResults = ApplyOrderingRequestsFilters(requests, filter).Skip(pagination.PageFirstResultIndex).Take(pagination.ResultsPerPage).ToList();
 
             var peopleResult = new RequestFilterResultResponse
@@ -208,7 +208,7 @@ namespace UniShareAPI.Controllers
                 });
             }
 
-            Pagination pagination = CalculateOffsets(count, filter.Page, filter.ResultsPerPage);
+            Pagination pagination = CalculateOffsets(count, filter.Page);
             List<ProfileReviewResponse> filteredResults = ApplyOrderingUserReviewFilters(reviews, filter).Skip(pagination.PageFirstResultIndex).Take(pagination.ResultsPerPage).ToList();
 
             var peopleResult = new UserReviewFilterResultResponse
@@ -292,7 +292,7 @@ namespace UniShareAPI.Controllers
                 });
             }
 
-            Pagination pagination = CalculateOffsets(count, filter.Page, filter.ResultsPerPage);
+            Pagination pagination = CalculateOffsets(count, filter.Page);
             List<RatingsResponse> filteredResults = ApplyOrderingRatingsFilters(reviews, filter).Skip(pagination.PageFirstResultIndex).Take(pagination.ResultsPerPage).ToList();
 
             var peopleResult = new RatingsFilterResultResponse
@@ -378,7 +378,7 @@ namespace UniShareAPI.Controllers
                 });
             }
 
-            Pagination pagination = CalculateOffsets(count, filter.Page, filter.ResultsPerPage);
+            Pagination pagination = CalculateOffsets(count, filter.Page);
             List<ReviewResponse> filteredResults = ApplyOrderingReviewFilters(reviews, filter).Skip(pagination.PageFirstResultIndex).Take(pagination.ResultsPerPage).ToList();
 
             var peopleResult = new ReviewFilterResultResponse
@@ -453,7 +453,7 @@ namespace UniShareAPI.Controllers
                 });
             }
 
-            Pagination pagination = CalculateOffsets(count, filter.Page, filter.ResultsPerPage);
+            Pagination pagination = CalculateOffsets(count, filter.Page);
             List<CommentResponse> filteredResults = ApplyOrderingCommentsFilters(comments, filter).Skip(pagination.PageFirstResultIndex).Take(pagination.ResultsPerPage).ToList();
 
             //Add images to the authors of the search result.
@@ -528,15 +528,14 @@ namespace UniShareAPI.Controllers
                 if (course != null)
                 {
                     courseResponse.Rating = _appDbContext.UserCourses.Where(r => r.CourseId == courseResponse.Id).Average(r => r.Rating);
-
                 }
             }
 
-            Pagination pagination = CalculateOffsets(count, filter.Page, filter.ResultsPerPage);
+            Pagination pagination = CalculateOffsets(count, filter.Page);
             List<CourseResponse> filteredResults = ApplyOrderingCoursesFilters(courses.AsQueryable(), filter).Skip(pagination.PageFirstResultIndex).Take(pagination.ResultsPerPage).ToList();
 
             //Check if the sorted courses is in the active degree.
-            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == filter.ActiveDegreeUserId);
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == filter.ProfileId);
             if(user != null && user.ActiveDegreeId != null)
             {
                 foreach (CourseResponse courseResponse in filteredResults)
@@ -602,7 +601,7 @@ namespace UniShareAPI.Controllers
                     Id = p.Id,
                 });
 
-            Pagination pagination = CalculateOffsets(count, filter.Page, filter.ResultsPerPage);
+            Pagination pagination = CalculateOffsets(count, filter.Page);
             List<UserResponse> filteredResults = ApplyOrderingUsersFilters(users, filter).Skip(pagination.PageFirstResultIndex).Take(pagination.ResultsPerPage).ToList();
 
             foreach(UserResponse userResponse in filteredResults)
@@ -697,8 +696,9 @@ namespace UniShareAPI.Controllers
             };
         }
 
-        private static Pagination CalculateOffsets(int count, int page, int resultPerPage)
+        private static Pagination CalculateOffsets(int count, int page)
         {
+            int resultPerPage = 10;
             int TotalPages = (count + resultPerPage - 1) / resultPerPage;
             int PageFirstResultIndex = (page - 1) * resultPerPage;
 

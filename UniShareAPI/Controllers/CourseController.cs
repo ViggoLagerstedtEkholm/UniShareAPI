@@ -74,7 +74,12 @@ namespace UniShareAPI.Controllers
             }
             else
             {
-                return NotFound();
+                var statistics = new Statistics()
+                {
+                    Count = 0,
+                    Rating = 0
+                };
+                return Ok(statistics);
             }
         }
 
@@ -83,6 +88,12 @@ namespace UniShareAPI.Controllers
         public async Task<IActionResult> GetCourseAsync(int id)
         {
             var course = await _appDbContext.Courses.FirstOrDefaultAsync(x => x.Id.Equals(id));
+
+            if(course == null)
+            {
+                return NotFound();
+            }
+
             return Ok(course);
         }
 

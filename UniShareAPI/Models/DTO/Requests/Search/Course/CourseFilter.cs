@@ -11,6 +11,6 @@ namespace UniShareAPI.Models.DTO.Requests.Search.Course
     {
         [StringRange(AllowableValues = new[] { "Name", "Credits", "Added", "Country", "City", "University", "Code", "Link", "Rating" }, ErrorMessage = "Not a valid option.")]
         public string Option { get; set; }
-        public string ActiveDegreeUserId { get; set; }
+        public string ProfileId { get; set; }
     }
 }
