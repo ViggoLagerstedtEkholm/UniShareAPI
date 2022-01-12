@@ -98,6 +98,16 @@ namespace UniShareAPI.Controllers
             }
         }
 
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Route("image/remove")]
+        public async Task<IActionResult> RemoveImage()
+        {
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(x => x.Id == HttpContext.GetUserId());
+            user.Image = null;
+            await _userManager.UpdateAsync(user);
+            return Ok();
+        }
 
         [HttpGet]
         [Route("image/get/{username}")]
@@ -110,9 +120,9 @@ namespace UniShareAPI.Controllers
                 return BadRequest("No such user.");
             }
 
-            if (user.Image != null)
+            if(user.Image == null)
             {
-                user.Image = user.Image;
+                return NotFound("No image!");
             }
 
             return Ok(user.Image);
